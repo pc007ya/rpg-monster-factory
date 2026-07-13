@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="/" class="back">← 回怪物列表</a>
+
+<section class="monster-header">
+  <div>
+    <h1>{{ monster.name }}</h1>
+    <p>{{ monster.appearance }}</p>
+    <p class="muted">{{ monster.style }}</p>
+  </div>
+  <span class="status large">{{ manifest.status }}</span>
+</section>
+
+<section class="panel">
+  <h2>1. 角色定稿</h2>
+  <div class="reference-layout">
+    <div class="preview">
+      {% if manifest.reference.file %}
+        <img src="/assets/{{ manifest.reference.file }}" alt="{{ monster.name }}">
+      {% else %}
+        <div class="placeholder">尚未上傳預覽圖</div>
+      {% endif %}
+    </div>
+    <div>
+      <p>狀態：<strong>{{ manifest.reference.status }}</strong></p>
+      <form method="post" enctype="multipart/form-data"
+            action="/api/monsters/{{ slug }}/reference/upload">
+        <label>上傳角色預覽圖</label>
+        <input type="file" name="image" accept="image/png,image/webp,image/jpeg" required>
+        <button type="submit">上傳預覽</button>
+      </form>
+      <form method="post" action="/api/monsters/{{ slug }}/reference/approve">
+        <button class="approve" type="submit">核准角色</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>2. 動作 Sprite Sheets</h2>
+  <div class="action-list">
+  {% for action_name, action in manifest.actions.items() %}
+    <article class="action-row">
+      <div>
+        <h3>{{ action_name }}</h3>
+        <p>{{ action.frames }} frames · {{ action.status }}</p>
+      </div>
+
+      <div class="sheet-preview">
+      {% if action.sheet %}
+        <img src="/assets/{{ action.sheet }}" alt="{{ action_name }}">
+      {% else %}
+        <span>尚未上傳</span>
+      {% endif %}
+      </div>
+
+      <form method="post" enctype="multipart/form-data"
+            action="/api/monsters/{{ slug }}/actions/{{ action_name }}/sheet">
+        <input type="file" name="image" accept="image/png,image/webp,image/jpeg" required>
+        <button type="submit">上傳 Sheet</button>
+      </form>
+
+      <form method="post"
+            action="/api/monsters/{{ slug }}/actions/{{ action_name }}/split">
+        <button class="secondary" type="submit">切割 Frames</button>
+      </form>
+
+      {% if action.split_files %}
+      <div class="frames">
+        {% for frame in action.split_files %}
+          <img src="/assets/{{ frame }}" alt="{{ action_name }}">
+        {% endfor %}
+      </div>
+      {% endif %}
+    </article>
+  {% endfor %}
+  </div>
+</section>
+
+<section class="panel">
+  <h2>原始 JSON</h2>
+  <pre>{{ monster | tojson(indent=2) }}</pre>
+</section>
+{% endblock %}

@@ -1,0 +1,42 @@
+{
+  "purpose": "AI art generation",
+  "style": "中國水墨仙俠、線條帶書法筆意、純色#00FF00綠幕背景(勿用綠色系主體)",
+  "name": "雲鶴",
+  "type": "regular",
+  "level": 16,
+  "element": "水",
+  "weakness": "雷",
+  "appearance": "雲氣化形的白鶴,翎羽如墨筆勾勒",
+  "skills": [
+    {
+      "name": "沖霄唳",
+      "desc": "單體俯衝",
+      "power": 34
+    }
+  ],
+  "drops": [
+    "鶴羽 35%"
+  ],
+  "sprite_request": {
+    "canvas": "純色 #00FF00 綠幕背景 PNG,單幀 256×256,腳底對齊底緣中央(交回後由 Sprite Studio 去背)",
+    "actions": [
+      {
+        "slot": "idle",
+        "frames": 4
+      },
+      {
+        "slot": "attack",
+        "frames": 6
+      },
+      {
+        "slot": "hit",
+        "frames": 2
+      },
+      {
+        "slot": "die",
+        "frames": 5
+      }
+    ],
+    "layout": "每動作一張橫向 sprite sheet,幀等寬"
+  }
+}

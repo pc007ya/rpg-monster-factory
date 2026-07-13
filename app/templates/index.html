@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div>
+    <h1>怪物素材工廠</h1>
+    <p>匯入 JSON，先核准角色，再逐動作上傳與切幀。</p>
+  </div>
+  <div class="actions">
+    <form method="post" action="/api/import/local">
+      <button type="submit">匯入本機 JSON</button>
+    </form>
+    <form method="post" action="/api/import/gdrive">
+      <button class="secondary" type="submit">同步 Google Drive</button>
+    </form>
+  </div>
+</section>
+
+<section class="grid">
+{% for item in items %}
+  {% set m = item.monster %}
+  {% set f = item.manifest %}
+  <a class="card" href="/monsters/{{ f.slug }}">
+    <div class="card-top">
+      <h2>{{ m.name }}</h2>
+      <span class="status">{{ f.status }}</span>
+    </div>
+    <p>{{ m.appearance }}</p>
+    <dl>
+      <div><dt>等級</dt><dd>{{ m.level }}</dd></div>
+      <div><dt>元素</dt><dd>{{ m.element }}</dd></div>
+      <div><dt>弱點</dt><dd>{{ m.weakness }}</dd></div>
+    </dl>
+    <div class="progress">
+      {% for name, action in f.actions.items() %}
+        <span class="{{ 'done' if action.status == 'split' else '' }}">{{ name }}</span>
+      {% endfor %}
+    </div>
+  </a>
+{% else %}
+  <div class="empty">
+    <h2>尚未匯入怪物</h2>
+    <p>把 JSON 放進 <code>data/inbox/</code>，再按「匯入本機 JSON」。</p>
+  </div>
+{% endfor %}
+</section>
+{% endblock %}

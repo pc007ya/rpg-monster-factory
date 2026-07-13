@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RPG Monster Factory</title>
+  <style>
+    :root{
+      font-family:Inter,system-ui,sans-serif;
+      color:#111827;background:#f3f4f6
+    }
+    *{box-sizing:border-box}
+    body{margin:0}
+    header{background:#111827;color:#fff;padding:18px 24px}
+    header h1{margin:0;font-size:20px}
+    main{max-width:1200px;margin:auto;padding:24px}
+    .toolbar,.panel,.card{
+      background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px
+    }
+    .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:20px}
+    button,.button{
+      display:inline-block;border:0;border-radius:9px;padding:10px 14px;
+      background:#2563eb;color:#fff;font-weight:700;cursor:pointer;text-decoration:none
+    }
+    button.secondary{background:#374151}
+    input[type=file]{max-width:260px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+    .card h2{margin:0 0 8px}
+    .meta{display:flex;gap:14px;font-size:13px;color:#4b5563}
+    .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
+    .tag{background:#e5e7eb;border-radius:999px;padding:4px 8px;font-size:12px}
+    .detail{margin-top:20px}
+    .row{display:grid;grid-template-columns:150px 1fr;gap:16px;margin:14px 0}
+    .preview{
+      min-height:220px;background:#eef2f7;border-radius:10px;
+      display:grid;place-items:center;overflow:hidden
+    }
+    .preview img{max-width:100%;max-height:420px}
+    .sheet{max-width:100%;max-height:180px;background:#dcfce7}
+    .frames{display:flex;gap:8px;overflow-x:auto;padding:10px 0}
+    .frames img{width:96px;height:96px;object-fit:contain;background:#dcfce7;border:1px solid #bbf7d0}
+    .hidden{display:none}
+    .notice{background:#fef3c7;border:1px solid #f59e0b;padding:12px;border-radius:9px;margin-bottom:16px}
+    pre{background:#111827;color:#e5e7eb;padding:14px;border-radius:9px;overflow:auto}
+    @media(max-width:700px){.row{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header><h1>RPG Monster Factory · GitHub Pages Demo</h1></header>
+<main>
+  <div class="notice">
+    此版本完全在瀏覽器執行：JSON 解析、圖片預覽、Sprite Sheet 拆幀都不會上傳伺服器。
+    Google Drive 同步與 AI 生圖需要 Cloud Run 後端。
+  </div>
+
+  <section class="toolbar">
+    <strong>1. 匯入怪物 JSON</strong>
+    <input id="jsonFiles" type="file" accept=".json,application/json" multiple>
+    <button id="loadSamples" class="secondary">載入倉庫範例</button>
+  </section>
+
+  <section id="monsterGrid" class="grid"></section>
+
+  <section id="detail" class="panel detail hidden">
+    <button id="backBtn" class="secondary">← 返回列表</button>
+    <h2 id="monsterName"></h2>
+    <p id="appearance"></p>
+    <div id="monsterMeta" class="meta"></div>
+
+    <hr>
+    <h3>2. 角色預覽圖</h3>
+    <div class="row">
+      <div class="preview" id="referencePreview">尚未選擇圖片</div>
+      <div>
+        <input id="referenceFile" type="file" accept="image/png,image/jpeg,image/webp">
+        <p>確認角色造型後，再處理各動作 Sprite Sheet。</p>
+      </div>
+    </div>
+
+    <hr>
+    <h3>3. 動作 Sprite Sheet 拆幀</h3>
+    <div id="actionEditor"></div>
+
+    <hr>
+    <h3>JSON</h3>
+    <pre id="jsonView"></pre>
+  </section>
+</main>
+
+<script>
+const state = { monsters: [], current: null };
+
+const grid = document.getElementById("monsterGrid");
+const detail = document.getElementById("detail");
+const jsonFiles = document.getElementById("jsonFiles");
+
+function validateMonster(data) {
+  if (!data || typeof data !== "object") throw new Error("JSON 格式錯誤");
+  if (!data.name) throw new Error("缺少 name");
+  if (!data.sprite_request?.actions?.length) throw new Error("缺少 sprite_request.actions");
+  return data;
+}
+
+function addMonster(data) {
+  const monster = validateMonster(data);
+  const existing = state.monsters.findIndex(x => x.name === monster.name);
+  if (existing >= 0) state.monsters[existing] = monster;
+  else state.monsters.push(monster);
+}
+
+function renderGrid() {
+  detail.classList.add("hidden");
+  grid.classList.remove("hidden");
+  grid.innerHTML = "";
+  if (!state.monsters.length) {
+    grid.innerHTML = '<div class="card"><h2>尚未匯入</h2><p>選擇一個或多個 JSON，或按「載入倉庫範例」。</p></div>';
+    return;
+  }
+  for (const monster of state.monsters) {
+    const card = document.createElement("article");
+    card.className = "card";
+    const actionTags = monster.sprite_request.actions
+      .map(a => `<span class="tag">${a.slot}: ${a.frames} frames</span>`).join("");
+    card.innerHTML = `
+      <h2>${escapeHtml(monster.name)}</h2>
+      <p>${escapeHtml(monster.appearance || "")}</p>
+      <div class="meta">
+        <span>Lv.${monster.level ?? "-"}</span>
+        <span>${escapeHtml(monster.element || "")}</span>
+        <span>弱點 ${escapeHtml(monster.weakness || "-")}</span>
+      </div>
+      <div class="actions">${actionTags}</div>
+      <p><button>開啟製作</button></p>`;
+    card.querySelector("button").onclick = () => openMonster(monster);
+    grid.appendChild(card);
+  }
+}
+
+function openMonster(monster) {
+  state.current = monster;
+  grid.classList.add("hidden");
+  detail.classList.remove("hidden");
+  document.getElementById("monsterName").textContent = monster.name;
+  document.getElementById("appearance").textContent = monster.appearance || "";
+  document.getElementById("monsterMeta").innerHTML =
+    `<span>等級 ${monster.level ?? "-"}</span><span>元素 ${escapeHtml(monster.element || "-")}</span><span>弱點 ${escapeHtml(monster.weakness || "-")}</span>`;
+  document.getElementById("jsonView").textContent = JSON.stringify(monster, null, 2);
+  document.getElementById("referencePreview").innerHTML = "尚未選擇圖片";
+  renderActions(monster);
+}
+
+function renderActions(monster) {
+  const host = document.getElementById("actionEditor");
+  host.innerHTML = "";
+  for (const action of monster.sprite_request.actions) {
+    const section = document.createElement("section");
+    section.className = "card";
+    section.style.marginBottom = "14px";
+    section.innerHTML = `
+      <h3>${escapeHtml(action.slot)} · ${action.frames} frames</h3>
+      <input class="sheetInput" type="file" accept="image/png,image/jpeg,image/webp">
+      <p><button class="splitBtn" disabled>切割 Frames</button></p>
+      <img class="sheet hidden" alt="sprite sheet preview">
+      <div class="frames"></div>
+      <p class="error"></p>`;
+    const input = section.querySelector(".sheetInput");
+    const btn = section.querySelector(".splitBtn");
+    const image = section.querySelector(".sheet");
+    const frames = section.querySelector(".frames");
+    const error = section.querySelector(".error");
+    let sourceImage = null;
+
+    input.onchange = async () => {
+      error.textContent = "";
+      frames.innerHTML = "";
+      const file = input.files[0];
+      if (!file) return;
+      sourceImage = await loadImage(file);
+      image.src = sourceImage.src;
+      image.classList.remove("hidden");
+      btn.disabled = false;
+    };
+
+    btn.onclick = () => {
+      error.textContent = "";
+      frames.innerHTML = "";
+      if (!sourceImage) return;
+      if (sourceImage.naturalWidth % action.frames !== 0) {
+        error.textContent = `錯誤：圖片寬度 ${sourceImage.naturalWidth}px 無法整除 ${action.frames} 幀。`;
+        return;
+      }
+      const fw = sourceImage.naturalWidth / action.frames;
+      const fh = sourceImage.naturalHeight;
+      for (let i = 0; i < action.frames; i++) {
+        const canvas = document.createElement("canvas");
+        canvas.width = fw; canvas.height = fh;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(sourceImage, i * fw, 0, fw, fh, 0, 0, fw, fh);
+        const img = document.createElement("img");
+        img.src = canvas.toDataURL("image/png");
+        img.title = `${action.slot}_${String(i).padStart(2,"0")}.png`;
+        img.onclick = () => downloadDataUrl(img.src, img.title);
+        frames.appendChild(img);
+      }
+    };
+    host.appendChild(section);
+  }
+}
+
+jsonFiles.onchange = async () => {
+  for (const file of jsonFiles.files) {
+    try {
+      addMonster(JSON.parse(await file.text()));
+    } catch (err) {
+      alert(`${file.name}: ${err.message}`);
+    }
+  }
+  renderGrid();
+};
+
+document.getElementById("referenceFile").onchange = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  const img = await loadImage(file);
+  const host = document.getElementById("referencePreview");
+  host.innerHTML = "";
+  host.appendChild(img);
+};
+
+document.getElementById("backBtn").onclick = renderGrid;
+
+document.getElementById("loadSamples").onclick = async () => {
+  const samplePaths = [
+    "data/inbox/ai-art-草靈.json",
+    "data/inbox/ai-art-雲鶴.json",
+    "data/inbox/ai-art-幻蝶.json"
+  ];
+  let loaded = 0;
+  for (const path of samplePaths) {
+    try {
+      const res = await fetch(path);
+      if (!res.ok) continue;
+      addMonster(await res.json());
+      loaded++;
+    } catch (_) {}
+  }
+  if (!loaded) alert("找不到範例 JSON。請確認 data/inbox 目錄已提交到 GitHub。");
+  renderGrid();
+};
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function downloadDataUrl(url, filename) {
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, s => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[s]);
+}
+
+renderGrid();
+</script>
+</body>
+</html>

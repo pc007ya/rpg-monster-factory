@@ -1,0 +1,47 @@
+{
+  "purpose": "AI art generation",
+  "style": "中國水墨仙俠、線條帶書法筆意、純色#00FF00綠幕背景(勿用綠色系主體)",
+  "name": "草靈",
+  "type": "regular",
+  "level": 8,
+  "element": "木",
+  "weakness": "火",
+  "appearance": "苔綠色小精怪,藤蔓為髮,水墨暈染輪廓",
+  "skills": [
+    {
+      "name": "藤鞭",
+      "desc": "單體抽打",
+      "power": 18
+    },
+    {
+      "name": "恢復",
+      "desc": "自我回血",
+      "power": 20
+    }
+  ],
+  "drops": [
+    "還魂草 22%"
+  ],
+  "sprite_request": {
+    "canvas": "純色 #00FF00 綠幕背景 PNG,單幀 256×256,腳底對齊底緣中央(交回後由 Sprite Studio 去背)",
+    "actions": [
+      {
+        "slot": "idle",
+        "frames": 4
+      },
+      {
+        "slot": "attack",
+        "frames": 6
+      },
+      {
+        "slot": "hit",
+        "frames": 2
+      },
+      {
+        "slot": "die",
+        "frames": 5
+      }
+    ],
+    "layout": "每動作一張橫向 sprite sheet,幀等寬"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "purpose": "AI art generation",
+  "style": "中國水墨仙俠、線條帶書法筆意、純色#00FF00綠幕背景(勿用綠色系主體)",
+  "name": "幻蝶",
+  "type": "regular",
+  "level": 12,
+  "element": "幻",
+  "weakness": "火",
+  "appearance": "半透明紫紗翅膀的巨蝶,翅面水墨眼斑,散落發光鱗粉",
+  "skills": [
+    {
+      "name": "幻蝶亂舞",
+      "desc": "群蝶環繞全體亂舞",
+      "power": 28
+    },
+    {
+      "name": "鱗粉回復",
+      "desc": "治癒自身",
+      "power": 40
+    }
+  ],
+  "drops": [
+    "蝶翼鱗粉 45%",
+    "凝靈露 12%"
+  ],
+  "sprite_request": {
+    "canvas": "純色 #00FF00 綠幕背景 PNG,單幀 256×256,腳底對齊底緣中央(交回後由 Sprite Studio 去背)",
+    "actions": [
+      {
+        "slot": "idle",
+        "frames": 4
+      },
+      {
+        "slot": "attack",
+        "frames": 6
+      },
+      {
+        "slot": "hit",
+        "frames": 2
+      },
+      {
+        "slot": "die",
+        "frames": 5
+      }
+    ],
+    "layout": "每動作一張橫向 sprite sheet,幀等寬"
+  }
+}
